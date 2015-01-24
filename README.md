@@ -10,8 +10,10 @@ and reformat to http://host:port format)
 settings.py
 -----------
 
+    DOWNLOAD_TIMEOUT = 5
+
     # Retry many times since proxies often fail
-    RETRY_TIMES = 10
+    RETRY_TIMES = 30
     # Retry on most error codes since proxies fail for different reasons
     RETRY_HTTP_CODES = [500, 503, 504, 400, 403, 404, 408]
 
@@ -28,6 +30,8 @@ settings.py
     # http://host3:port
     # ...
     PROXY_LIST = '/path/to/proxy/list.txt'
+    PROXY_MAX_RETRY = 3
+    RETRY_PRIORITY_ADJUST = 1
 
 
 Your spider
