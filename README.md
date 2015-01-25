@@ -1,6 +1,8 @@
 Random proxy middleware for Scrapy (http://scrapy.org/)
 =======================================================
 
+Based on aivarsk/scrapy-proxies. Does smart proxy invalidation if it fails certain times and does not recover.
+
 Processes Scrapy requests using a random proxy from list to avoid IP ban and
 improve crawling speed.
 

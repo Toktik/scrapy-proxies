@@ -24,15 +24,17 @@ import base64
 from scrapy import log
 
 class RandomProxy(object):
-    def __init__(self, crawler):
+    def __init__(self, crawler, stats):
         settings = crawler.settings
         self.crawler = crawler
+        self.stats = stats
         self.proxy_list = settings.get('PROXY_LIST')
         self.proxy_max_retry = settings.get('PROXY_MAX_RETRY')
         fin = open(self.proxy_list)
 
         self.proxies = {}
         self.proxyRetries = {}
+        self.failedProxies = {}
         for line in fin.readlines():
             parts = re.match('(\w+://)(\w+:\w+@)?(.+)', line)
 
@@ -47,20 +49,27 @@ class RandomProxy(object):
 
         fin.close()
 
+        self.stats.set_value('randomproxy/proxies_provided_num', len(self.proxies))
+
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler)
+        return cls(crawler, crawler.stats)
 
     def process_request(self, request, spider):
         prevProxy = request.meta.get('proxy')
         if prevProxy in self.proxyRetries and request.meta.get('retry_times', 0) > 0:
             self.proxyRetries[prevProxy] += 1
+        elif prevProxy in self.proxyRetries:
+            self.proxyRetries[prevProxy] -= 0.8
+            if self.proxyRetries[prevProxy] < 0:
+                self.proxyRetries[prevProxy] = 0
 
         if prevProxy in self.proxyRetries and self.proxyRetries[prevProxy] > self.proxy_max_retry:
             log.msg('Removing failed proxy <%s>, %d proxies left' % (
                     prevProxy, len(self.proxies)))
             del self.proxies[prevProxy]
             del self.proxyRetries[prevProxy]
+            self.stats.inc_value('randomproxy/proxies_failed_num')
 
         if len(self.proxies) == 0:
             log.msg(format="No proxies left. Exiting",
